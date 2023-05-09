@@ -2,8 +2,7 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum SquareState {
-    X,
-    O,
+    Filled(char),
     None
 }
 
@@ -14,17 +13,16 @@ pub enum TurnState {
     Victory
 }
 
+#[derive(Clone)]
 pub struct TicTacToe {
     pub x_size: usize,
     pub y_size: usize,
     horizontal_spacer: char,
     vertical_spacer: char,
-    squares: Vec<SquareState>,
+    pub squares: Vec<SquareState>,
     pub seq_to_win: usize,
-    pub player1_symbol: char,
-    pub player2_symbol: char,
     pub empty_space_symbol: char,
-    filled: usize
+    filled: usize,
 }
 
 impl Default for TicTacToe {
@@ -36,9 +34,7 @@ impl Default for TicTacToe {
             vertical_spacer: '|',
             squares: vec![SquareState::None; 16],
             seq_to_win: 4,
-            player1_symbol: 'X',
-            player2_symbol: 'O',
-            empty_space_symbol: '.',
+            empty_space_symbol: ' ',
             filled: 0
         }
     }
@@ -50,14 +46,11 @@ impl Display for TicTacToe {
         let mut lane = 0;
         for i in 0..self.squares.len() {
             match self.squares.get(i).unwrap() {
-                SquareState::X => {
-                    s.push_str(&*format!(" {} ", self.player1_symbol))
-                }
-                SquareState::O => {
-                    s.push_str(&*format!(" {} ", self.player2_symbol))
+                SquareState::Filled(c) => {
+                    s.push_str(&*format!(" {} ", c))
                 }
                 SquareState::None => {
-                    s.push_str(" . ")
+                    s.push_str(&*format!(" {} ", self.empty_space_symbol))
                 }
             }
             if (i > 0) && ((i + 1) % self.x_size == 0) && !(lane + 1 == self.y_size) {
@@ -76,7 +69,7 @@ impl Display for TicTacToe {
 }
 
 impl TicTacToe {
-    pub fn new(x_size: usize, y_size: usize, seq_to_win: usize, player1_symbol: char, player2_symbol: char, empty_space_symbol: char) -> TicTacToe {
+    pub fn new(x_size: usize, y_size: usize, seq_to_win: usize, empty_space_symbol: char) -> TicTacToe {
         TicTacToe {
             x_size,
             y_size,
@@ -84,8 +77,6 @@ impl TicTacToe {
             vertical_spacer: '|',
             squares: vec![SquareState::None; x_size*y_size],
             seq_to_win,
-            player1_symbol,
-            player2_symbol,
             empty_space_symbol,
             filled: 0
         }
@@ -209,5 +200,13 @@ impl TicTacToe {
 
     fn check_draw(&self) -> bool {
         self.filled == self.squares.len()
+    }
+
+    pub fn size(&self) -> usize {
+        self.x_size * self.y_size
+    }
+
+    pub fn get_by_index(&self, index: usize) -> Option<&SquareState> {
+        self.squares.get(index)
     }
 }
