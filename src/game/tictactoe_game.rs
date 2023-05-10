@@ -26,7 +26,7 @@ struct Player {
 enum GameState {
     Player(usize, Player), // number, player info
     Finished,
-    Begin
+    Begin(usize)
 }
 
 pub enum AiDifficulties {
@@ -40,13 +40,13 @@ impl Display for TicTacToeGame {
         let state = &self.game_state;
         return match state {
             GameState::Player(_, s) => {
-                write!(f, "\nPlayer {} turn:\n\n", s.name).and(self.board.fmt(f))
+                write!(f, "\n{}'s turn:\n\n", s.name).and(self.board.fmt(f))
             }
             GameState::Finished => {
-                write!(f, "Game is finished!").and(self.board.fmt(f))
+                write!(f, "Game is finished!\n\n").and(self.board.fmt(f))
             }
-            GameState::Begin => {
-                write!(f, "Game have not started!").and(self.board.fmt(f))
+            GameState::Begin(_) => {
+                write!(f, "Game have not started!\n\n").and(self.board.fmt(f))
             }
         }
     }
@@ -67,6 +67,7 @@ impl TicTacToeGame {
         g.player2.p_type = PlayerType::Computer(TicTacToeGame::create_ai(ai2_difficulty, g.player2.square_symbol.clone(), g.player1.square_symbol.clone()));
         return g
     }
+    
     fn create_ai(difficulty: AiDifficulties, symbol: char, op_symbol: char) -> Ai {
         let max_childs: isize;
         let max_layers: isize;
@@ -84,14 +85,19 @@ impl TicTacToeGame {
                 max_layers = -1;
             }
         }
-        Ai::create(max_childs, max_layers, symbol, op_symbol)
+        Ai::create(max_childs, symbol, op_symbol)
     }
+    
     pub fn start_game(&mut self) {
         loop {
             match &self.game_state {
-                GameState::Begin => {
-                    self.set_current_player_to_1();
-                    println!("{}", self)
+                GameState::Begin(p) => {
+                    match p {
+                        1 => self.game_state = GameState::Player(p.to_owned(), self.player1.clone()),
+                        2 => self.game_state = GameState::Player(p.to_owned(), self.player2.clone()),
+                        _ => {}
+                    }
+                    println!("{}", self);
                 }
                 GameState::Player(n, p) => {
                     let col: usize;
@@ -111,7 +117,7 @@ impl TicTacToeGame {
                             ans.remove(ans.len()-1);
                             line = ans.parse().unwrap();
                         }
-                        PlayerType::Computer(mut ai) => {
+                        PlayerType::Computer(ref mut ai) => {
                             let ai_action = ai.act(self.board.clone());
                             col = ai_action.0 + 1;
                             line = ai_action.1 + 1;
@@ -135,24 +141,26 @@ impl TicTacToeGame {
                             }else {
                                 self.set_current_player_to_1()
                             }
-                            println!("{}", self)
+                            println!("{}", self);
                         }
                     }
                 }
                 GameState::Finished => {
-                    println!("{}", self.board);
-                    println!("Game is finished! please re-load the game!");
+                    println!("\n{}", self.board);
+                    println!("\nGame is finished! please re-load the game!");
                     return;
                 }
             }
         }
     }
+    
     fn set_current_player_to_1(&mut self) {
         self.game_state = GameState::Player(1, self.player1.clone());
     }
     fn set_current_player_to_2(&mut self) {
         self.game_state = GameState::Player(2, self.player2.clone());
     }
+    
     pub fn set_empty_space_symbol(&mut self, symbol: char) {
         self.board.empty_space_symbol = symbol;
     }
@@ -168,28 +176,29 @@ impl TicTacToeGame {
             ai.symbol = symbol
         }
     }
+    
     pub fn set_first_player(&mut self, player_n: usize){
-        if let GameState::Begin = self.game_state {
-            match player_n {
-                1 => {
-                    self.set_current_player_to_1()
-                }
-                2 => {
-                    self.set_current_player_to_2()
-                }
-                n => {
-                    panic!("{} is not a valid player number!", n)
-                }
+        if player_n > 0 && player_n < 3 {
+            if let GameState::Begin(_) = self.game_state {
+                self.game_state = GameState::Begin(player_n)
+            }else {
+                panic!("Cannot change player during the game!")
             }
-            return;
+        }else {
+            panic!("Invalid player number!")
         }
-        panic!("Cannot change player during the game!")
     }
 
     pub fn change_size(&mut self, size: usize, in_a_row_to_win: usize) {
         self.board.x_size = size;
         self.board.y_size = size;
         self.board.seq_to_win = in_a_row_to_win;
+        self.board.squares = vec![SquareState::None; size.pow(2)]
+    }
+
+    pub fn reload_game(&mut self) {
+        self.game_state = GameState::Begin(1);
+        self.board.clear();
     }
 }
 
@@ -207,7 +216,7 @@ impl Default for TicTacToeGame {
                 name: "Player 2".to_string(),
                 square_symbol: 'O',
             },
-            game_state: GameState::Begin,
+            game_state: GameState::Begin(1),
         }
     }
 }

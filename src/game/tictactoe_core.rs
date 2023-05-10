@@ -22,7 +22,17 @@ pub struct TicTacToe {
     pub squares: Vec<SquareState>,
     pub seq_to_win: usize,
     pub empty_space_symbol: char,
-    filled: usize,
+    pub filled: usize,
+}
+
+impl PartialEq for TicTacToe {
+    fn eq(&self, other: &Self) -> bool {
+        self.squares.eq(&other.squares)
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        self.squares.ne(&other.squares)
+    }
 }
 
 impl Default for TicTacToe {
@@ -87,8 +97,13 @@ impl TicTacToe {
         self.squares.get(i)
     }
 
-    fn get_coord_index(&self, x: usize, y: usize) -> usize {
+    pub fn get_coord_index(&self, x: usize, y: usize) -> usize {
         x + self.x_size*y
+    }
+    pub fn get_index_coord(&self, i: usize) -> (usize, usize) {
+        let x = i % self.x_size;
+        let y = i / self.x_size;
+        (x, y)
     }
 
     pub fn set_square(&mut self, x: usize, y: usize, state: SquareState) -> TurnState {
@@ -101,15 +116,26 @@ impl TicTacToe {
         self.check_game_over(x, y, state)
     }
 
-    fn check_game_over(&mut self, x: usize, y: usize, state: SquareState) -> TurnState {
-        if self.check_draw() {
-            return TurnState::Draw
+    pub fn set_square_from_index(&mut self, i: usize, state: SquareState) -> TurnState {
+        if self.squares[i] != SquareState::None {
+            return TurnState::Error
         }
-        if (self.check_x(x, y, state) >= self.seq_to_win) ||
+        self.squares[i] = state;
+        self.filled += 1;
+        let coord = self.get_index_coord(i);
+        self.check_game_over(coord.0, coord.1, state)
+    }
+
+    fn check_game_over(&mut self, x: usize, y: usize, state: SquareState) -> TurnState {
+        if  self.filled >= self.seq_to_win + 2 &&
+            ((self.check_x(x, y, state) >= self.seq_to_win) ||
             (self.check_y(x, y, state) == self.seq_to_win) ||
             (self.check_left_diag(x, y, state) == self.seq_to_win) ||
-            (self.check_right_diag(x, y, state) == self.seq_to_win) {
+            (self.check_right_diag(x, y, state) == self.seq_to_win)) {
             return TurnState::Victory
+        }
+        if self.check_draw() {
+            return TurnState::Draw
         }
         return TurnState::Continue
     }
@@ -208,5 +234,10 @@ impl TicTacToe {
 
     pub fn get_by_index(&self, index: usize) -> Option<&SquareState> {
         self.squares.get(index)
+    }
+
+    pub fn clear(&mut self) {
+        self.squares = vec![SquareState::None; self.x_size*self.y_size];
+        self.filled = 0
     }
 }

@@ -1,18 +1,16 @@
 #[derive(Clone)]
 pub struct Node<T> {
     pub childs: Vec<Node<T>>,
-    pub data: T
-}
-
-pub trait Utility {
-    fn get_utility(&self) -> i32;
+    pub data: T,
+    pub utility: Option<i32>
 }
 
 impl<T> Node<T> {
-    pub fn new(data: T) -> Node<T>{
+    pub fn new(data: T) -> Node<T> {
         Node {
             childs: vec![],
             data,
+            utility: None
         }
     }
     pub fn add_child(&mut self, data: T) {
@@ -22,13 +20,30 @@ impl<T> Node<T> {
         self.childs.is_empty()
     }
 
-    pub fn minimax(node: &Node<T>) -> &Node<T> where T:Utility {
-        node.get_max_child_utility()
+    pub fn minimax(&self, max: bool) -> Node<T> where T: Clone {
+        let self_binding = self.clone();
+        let mut best_move: Option<Node<T>> = None;
+        for mut c in self_binding.childs {
+            if max {
+                let m = c.get_min_child_utility();
+                if best_move.is_none() || m.utility > best_move.clone().unwrap().utility {
+                    c.utility = m.utility;
+                    best_move = Some(c);
+                }
+            }else {
+                let m = c.get_max_child_utility();
+                if best_move.is_none() || m.utility < best_move.clone().unwrap().utility {
+                    c.utility = m.utility;
+                    best_move = Some(c);
+                }
+            }
+        }
+        best_move.unwrap()
     }
 
-    fn get_max_child_utility(&self) -> &Node<T> where T: Utility{
+    fn get_max_child_utility(&self) -> Node<T> where T: Clone {
         if self.is_terminal() {
-            return self
+            return self.clone()
         }
         let mut iterator = self.childs.iter();
         let mut next = iterator.next();
@@ -36,17 +51,18 @@ impl<T> Node<T> {
         next = iterator.next();
         while next.is_some() {
             let node = next.unwrap().get_min_child_utility();
-            if final_node.data.get_utility() < node.data.get_utility() {
-                final_node = self;
+            if final_node.utility < node.utility {
+                final_node = self.clone();
+                final_node.utility = node.utility
             }
             next = iterator.next();
         }
         final_node
     }
 
-    fn get_min_child_utility(&self) -> &Node<T> where T: Utility{
+    fn get_min_child_utility(&self) -> Node<T> where T: Clone {
         if self.is_terminal() {
-            return self
+            return self.clone()
         }
         let mut iterator = self.childs.iter();
         let mut next = iterator.next();
@@ -54,8 +70,9 @@ impl<T> Node<T> {
         next = iterator.next();
         while next.is_some() {
             let node = next.unwrap().get_max_child_utility();
-            if final_node.data.get_utility() > node.data.get_utility() {
-                final_node = self;
+            if final_node.utility > node.utility {
+                final_node = self.clone();
+                final_node.utility = node.utility
             }
             next = iterator.next();
         }
