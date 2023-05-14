@@ -1,5 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::io::{stdin, stdout, Write};
+use std::thread::sleep;
+use std::time::Duration;
 use crate::game::ai::tictactoe_ai_player::Ai;
 use crate::game::tictactoe_core::{SquareState, TicTacToe, TurnState};
 
@@ -85,7 +87,7 @@ impl TicTacToeGame {
                 max_layers = -1;
             }
         }
-        Ai::create(max_childs, symbol, op_symbol)
+        Ai::create(max_childs, max_layers, symbol, op_symbol)
     }
     
     pub fn start_game(&mut self) {
@@ -144,6 +146,7 @@ impl TicTacToeGame {
                             println!("{}", self);
                         }
                     }
+                    sleep(Duration::from_millis(500))
                 }
                 GameState::Finished => {
                     println!("\n{}", self.board);
@@ -153,7 +156,6 @@ impl TicTacToeGame {
             }
         }
     }
-    
     fn set_current_player_to_1(&mut self) {
         self.game_state = GameState::Player(1, self.player1.clone());
     }

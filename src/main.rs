@@ -6,8 +6,10 @@ mod game;
 const SIZE: usize = 3;
 
 fn main() {
-    let mut game: TicTacToeGame = TicTacToeGame::load_default_1player_game(AiDifficulties::Hard);
-    //let mut game: TicTacToeGame = TicTacToeGame::load_default_2player_game();
+    let mut game: TicTacToeGame;
+    //game: TicTacToeGame = TicTacToeGame::load_default_2player_game();
+    //game = TicTacToeGame::load_default_1player_game(AiDifficulties::Hard);
+    game = TicTacToeGame::load_default_ai_game(AiDifficulties::Hard, AiDifficulties::Hard);
     game.change_size(SIZE, SIZE);
 
     loop {
