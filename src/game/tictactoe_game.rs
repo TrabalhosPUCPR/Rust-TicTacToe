@@ -1,7 +1,5 @@
 use std::fmt::{Display, Formatter};
 use std::io::{stdin, stdout, Write};
-use std::thread::sleep;
-use std::time::Duration;
 use crate::game::ai::tictactoe_ai_player::Ai;
 use crate::game::tictactoe_core::{SquareState, TicTacToe, TurnState};
 
@@ -91,7 +89,7 @@ impl TicTacToeGame {
     
     pub fn start_game(&mut self) {
         loop {
-            match &self.game_state {
+            match &mut self.game_state {
                 GameState::Begin(p) => {
                     match p {
                         1 => self.game_state = GameState::Player(p.to_owned(), self.player1.clone()),
@@ -103,7 +101,7 @@ impl TicTacToeGame {
                 GameState::Player(n, p) => {
                     let col: usize;
                     let line: usize;
-                    match p.p_type.clone() {
+                    match &mut p.p_type {
                         PlayerType::Human => {
                             let col_input;
                             let line_input;
@@ -131,7 +129,7 @@ impl TicTacToeGame {
                                 continue
                             }
                         }
-                        PlayerType::Computer(ref mut ai) => {
+                        PlayerType::Computer(ai) => {
                             let ai_action = ai.act(self.board.clone());
                             col = ai_action.0 + 1;
                             line = ai_action.1 + 1;
@@ -150,7 +148,7 @@ impl TicTacToeGame {
                             self.game_state = GameState::Finished
                         }
                         _ => {
-                            if n.eq(&1) {
+                            if n.to_owned().eq(&1) {
                                 self.set_current_player_to_2()
                             }else {
                                 self.set_current_player_to_1()
@@ -179,14 +177,20 @@ impl TicTacToeGame {
     }
     pub fn set_player1_symbol(&mut self, symbol: char) {
         self.player1.square_symbol = symbol;
-        if let PlayerType::Computer(mut ai) = self.player1.p_type.clone() {
+        if let PlayerType::Computer(ai) = &mut self.player1.p_type {
             ai.symbol = symbol
+        }
+        if let PlayerType::Computer(ai) = &mut self.player2.p_type {
+            ai.op_symbol = symbol
         }
     }
     pub fn set_player2_symbol(&mut self, symbol: char) {
         self.player2.square_symbol = symbol;
         if let PlayerType::Computer(mut ai) = self.player2.p_type.clone() {
             ai.symbol = symbol
+        }
+        if let PlayerType::Computer(ai) = &mut self.player2.p_type {
+            ai.op_symbol = symbol
         }
     }
     
@@ -198,11 +202,14 @@ impl TicTacToeGame {
                 panic!("Cannot change player during the game!")
             }
         }else {
-            panic!("Invalid player number!")
+            panic!("{} Is not a valid player number! Use 1 or 2.", player_n)
         }
     }
 
     pub fn change_size(&mut self, size: usize, in_a_row_to_win: usize) {
+        if size < in_a_row_to_win {
+            panic!("Board size of {} is too small to make {} in a row!", size, in_a_row_to_win)
+        }
         self.board.x_size = size;
         self.board.y_size = size;
         self.board.seq_to_win = in_a_row_to_win;
