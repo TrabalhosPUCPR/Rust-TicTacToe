@@ -1,7 +1,5 @@
 use std::fmt::{Display, Formatter};
 use std::io::{stdin, stdout, Write};
-use std::thread::sleep;
-use std::time::Duration;
 use crate::game::ai::tictactoe_ai_player::Ai;
 use crate::game::tictactoe_core::{SquareState, TicTacToe, TurnState};
 
@@ -64,27 +62,26 @@ impl TicTacToeGame {
         Default::default()
     }
     pub fn load_default_ai_game(ai1_difficulty: AiDifficulties, ai2_difficulty: AiDifficulties) -> TicTacToeGame {
-        let mut g: TicTacToeGame = Default::default();
+        let mut g: TicTacToeGame = TicTacToeGame::load_default_1player_game(ai2_difficulty);
         g.player1.p_type = PlayerType::Computer(TicTacToeGame::create_ai(ai1_difficulty, g.player1.square_symbol.clone(), g.player2.square_symbol.clone()));
-        g.player2.p_type = PlayerType::Computer(TicTacToeGame::create_ai(ai2_difficulty, g.player2.square_symbol.clone(), g.player1.square_symbol.clone()));
         return g
     }
     
     fn create_ai(difficulty: AiDifficulties, symbol: char, op_symbol: char) -> Ai {
-        let max_childs: isize;
-        let max_layers: isize;
-        match difficulty {
+        let max_childs: usize;
+        let max_layers: usize;
+        match difficulty { // 0 == infinite
             AiDifficulties::Easy => {
-                max_childs = 2;
-                max_layers = 4;
+                max_childs = 5;
+                max_layers = 2;
             }
             AiDifficulties::Medium => {
-                max_childs = 5;
-                max_layers = 10;
+                max_childs = 10;
+                max_layers = 3;
             }
             AiDifficulties::Hard => {
-                max_childs = -1;
-                max_layers = -1;
+                max_childs = 0;
+                max_layers = 4;
             }
         }
         Ai::create(max_childs, max_layers, symbol, op_symbol)
@@ -106,18 +103,31 @@ impl TicTacToeGame {
                     let line: usize;
                     match p.p_type.clone() {
                         PlayerType::Human => {
+                            let col_input;
+                            let line_input;
                             println!("{}'s turn, type the column of your next move\ncolumn: ", p.name);
                             let mut ans: String = String::new();
                             stdout().flush().expect("");
                             stdin().read_line(&mut ans).unwrap();
                             ans.remove(ans.len()-1);
-                            col = ans.parse().unwrap();
+                            col_input = ans.parse();
                             println!("\nline: ");
                             ans.clear();
                             stdout().flush().expect("");
                             stdin().read_line(&mut ans).unwrap();
                             ans.remove(ans.len()-1);
-                            line = ans.parse().unwrap();
+                            line_input = ans.parse();
+                            if col_input.is_ok() && line_input.is_ok() {
+                                col = col_input.unwrap();
+                                line = line_input.unwrap();
+                                if col < 1 || col > self.board.x_size || line < 1 || line > self.board.y_size {
+                                    println!("Invalid column or line number");
+                                    continue
+                                }
+                            }else {
+                                println!("Not a valid number!");
+                                continue
+                            }
                         }
                         PlayerType::Computer(ref mut ai) => {
                             let ai_action = ai.act(self.board.clone());
@@ -146,7 +156,6 @@ impl TicTacToeGame {
                             println!("{}", self);
                         }
                     }
-                    sleep(Duration::from_millis(500))
                 }
                 GameState::Finished => {
                     println!("\n{}", self.board);
