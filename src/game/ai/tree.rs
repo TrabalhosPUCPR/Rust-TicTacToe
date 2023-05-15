@@ -146,17 +146,6 @@ impl<T> Node<T> where T: Clone + PartialEq {
                 self_node_type.verify_and_set(n);
             }
         }
-        /*
-        let next;
-        if parent_node_type.is_none() {
-            next = sorted_children[0].get_max_min_child_utility(&mut self_node_type, !max);
-        }else {
-            next = sorted_children[0].get_max_min_child_utility(parent_node_type, !max);
-        }
-        if let Some(n) = next.0 {
-            self_node_type.verify_and_set(n);
-        }
-         */
         if self_node_type.is_some() && parent_node_type.verify(self_node_type.clone().full_unwrap()) {
             let found_node = self_node_type.full_unwrap();
             self.utility = found_node.utility;

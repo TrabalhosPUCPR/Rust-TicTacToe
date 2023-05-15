@@ -39,12 +39,12 @@ impl PartialEq for TicTacToe {
 impl Default for TicTacToe {
     fn default() -> Self {
         TicTacToe {
-            x_size: 4,
-            y_size: 4,
+            x_size: 3,
+            y_size: 3,
             horizontal_spacer: '-',
             vertical_spacer: '|',
-            squares: vec![SquareState::None; 16],
-            seq_to_win: 4,
+            squares: vec![SquareState::None; 9],
+            seq_to_win: 3,
             empty_space_symbol: ' ',
             filled: 0
         }
@@ -192,7 +192,7 @@ impl TicTacToe {
     }
 
     fn check_y(&self, x: usize, y: usize, state: SquareState, stop_counting: bool) -> usize {
-        let mut available_spaces_count = 1;
+        //let mut available_spaces_count = 1;
         let mut seq_count = 1;
         let mut dist = 1;
         let mut y_check = y.checked_sub(1); // starts looking above, checked sub is to avoid going below 0
@@ -202,8 +202,6 @@ impl TicTacToe {
                 seq_count += 1;
             }else if stop_counting || square_state != SquareState::None {
                 break
-            }else if square_state == SquareState::None {
-                available_spaces_count += 1
             }
             dist += 1;
             y_check = y_check.unwrap().checked_sub(1);
@@ -216,17 +214,11 @@ impl TicTacToe {
                 seq_count += 1;
             }else if stop_counting || square_state != SquareState::None {
                 break
-            }else if square_state == SquareState::None {
-                available_spaces_count += 1
             }
             dist += 1;
             y_check += 1;
         }
-        return if available_spaces_count >= self.seq_to_win {
-            seq_count
-        }else {
-            1
-        }
+        seq_count
     }
 
     fn check_x(&self, x: usize, y: usize, state: SquareState, stop_counting: bool) -> usize {

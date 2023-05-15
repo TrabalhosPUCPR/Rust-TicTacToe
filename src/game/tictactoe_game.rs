@@ -1,5 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::io::{stdin, stdout, Write};
+use std::thread::sleep;
+use std::time::Duration;
 use crate::game::ai::tictactoe_ai_player::Ai;
 use crate::game::tictactoe_core::{SquareState, TicTacToe, TurnState};
 
