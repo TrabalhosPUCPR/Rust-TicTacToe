@@ -3,14 +3,15 @@ use std::time::Duration;
 use crate::game::tictactoe_game::{AiDifficulties, TicTacToeGame};
 mod game;
 
-const SIZE: usize = 3;
+const SIZE: usize = 4;
 
 fn main() {
     let mut game: TicTacToeGame;
     //game: TicTacToeGame = TicTacToeGame::load_default_2player_game();
-    //game = TicTacToeGame::load_default_1player_game(AiDifficulties::Hard);
-    game = TicTacToeGame::load_default_ai_game(AiDifficulties::Hard, AiDifficulties::Hard);
-    game.change_size(SIZE, SIZE);
+    game = TicTacToeGame::load_default_1player_game(AiDifficulties::Hard);
+    //game = TicTacToeGame::load_default_ai_game(AiDifficulties::Hard, AiDifficulties::Hard);
+    game.change_size(SIZE, 4);
+    game.set_first_player(2);
 
     loop {
         game.start_game();

@@ -1,7 +1,5 @@
 use std::fmt::{Display, Formatter};
 use std::io::{stdin, stdout, Write};
-use std::thread::sleep;
-use std::time::Duration;
 use crate::game::ai::tictactoe_ai_player::Ai;
 use crate::game::tictactoe_core::{SquareState, TicTacToe, TurnState};
 
@@ -64,27 +62,26 @@ impl TicTacToeGame {
         Default::default()
     }
     pub fn load_default_ai_game(ai1_difficulty: AiDifficulties, ai2_difficulty: AiDifficulties) -> TicTacToeGame {
-        let mut g: TicTacToeGame = Default::default();
+        let mut g: TicTacToeGame = TicTacToeGame::load_default_1player_game(ai2_difficulty);
         g.player1.p_type = PlayerType::Computer(TicTacToeGame::create_ai(ai1_difficulty, g.player1.square_symbol.clone(), g.player2.square_symbol.clone()));
-        g.player2.p_type = PlayerType::Computer(TicTacToeGame::create_ai(ai2_difficulty, g.player2.square_symbol.clone(), g.player1.square_symbol.clone()));
         return g
     }
     
     fn create_ai(difficulty: AiDifficulties, symbol: char, op_symbol: char) -> Ai {
-        let max_childs: isize;
-        let max_layers: isize;
-        match difficulty {
+        let max_childs: usize;
+        let max_layers: usize;
+        match difficulty { // 0 == infinite
             AiDifficulties::Easy => {
-                max_childs = 2;
-                max_layers = 4;
+                max_childs = 5;
+                max_layers = 2;
             }
             AiDifficulties::Medium => {
-                max_childs = 5;
-                max_layers = 10;
+                max_childs = 10;
+                max_layers = 3;
             }
             AiDifficulties::Hard => {
-                max_childs = -1;
-                max_layers = -1;
+                max_childs = 0;
+                max_layers = 4;
             }
         }
         Ai::create(max_childs, max_layers, symbol, op_symbol)
@@ -92,7 +89,7 @@ impl TicTacToeGame {
     
     pub fn start_game(&mut self) {
         loop {
-            match &self.game_state {
+            match &mut self.game_state {
                 GameState::Begin(p) => {
                     match p {
                         1 => self.game_state = GameState::Player(p.to_owned(), self.player1.clone()),
@@ -104,22 +101,35 @@ impl TicTacToeGame {
                 GameState::Player(n, p) => {
                     let col: usize;
                     let line: usize;
-                    match p.p_type.clone() {
+                    match &mut p.p_type {
                         PlayerType::Human => {
+                            let col_input;
+                            let line_input;
                             println!("{}'s turn, type the column of your next move\ncolumn: ", p.name);
                             let mut ans: String = String::new();
                             stdout().flush().expect("");
                             stdin().read_line(&mut ans).unwrap();
                             ans.remove(ans.len()-1);
-                            col = ans.parse().unwrap();
+                            col_input = ans.parse();
                             println!("\nline: ");
                             ans.clear();
                             stdout().flush().expect("");
                             stdin().read_line(&mut ans).unwrap();
                             ans.remove(ans.len()-1);
-                            line = ans.parse().unwrap();
+                            line_input = ans.parse();
+                            if col_input.is_ok() && line_input.is_ok() {
+                                col = col_input.unwrap();
+                                line = line_input.unwrap();
+                                if col < 1 || col > self.board.x_size || line < 1 || line > self.board.y_size {
+                                    println!("Invalid column or line number");
+                                    continue
+                                }
+                            }else {
+                                println!("Not a valid number!");
+                                continue
+                            }
                         }
-                        PlayerType::Computer(ref mut ai) => {
+                        PlayerType::Computer(ai) => {
                             let ai_action = ai.act(self.board.clone());
                             col = ai_action.0 + 1;
                             line = ai_action.1 + 1;
@@ -138,7 +148,7 @@ impl TicTacToeGame {
                             self.game_state = GameState::Finished
                         }
                         _ => {
-                            if n.eq(&1) {
+                            if n.to_owned().eq(&1) {
                                 self.set_current_player_to_2()
                             }else {
                                 self.set_current_player_to_1()
@@ -146,7 +156,6 @@ impl TicTacToeGame {
                             println!("{}", self);
                         }
                     }
-                    sleep(Duration::from_millis(500))
                 }
                 GameState::Finished => {
                     println!("\n{}", self.board);
@@ -168,14 +177,20 @@ impl TicTacToeGame {
     }
     pub fn set_player1_symbol(&mut self, symbol: char) {
         self.player1.square_symbol = symbol;
-        if let PlayerType::Computer(mut ai) = self.player1.p_type.clone() {
+        if let PlayerType::Computer(ai) = &mut self.player1.p_type {
             ai.symbol = symbol
+        }
+        if let PlayerType::Computer(ai) = &mut self.player2.p_type {
+            ai.op_symbol = symbol
         }
     }
     pub fn set_player2_symbol(&mut self, symbol: char) {
         self.player2.square_symbol = symbol;
         if let PlayerType::Computer(mut ai) = self.player2.p_type.clone() {
             ai.symbol = symbol
+        }
+        if let PlayerType::Computer(ai) = &mut self.player2.p_type {
+            ai.op_symbol = symbol
         }
     }
     
@@ -187,11 +202,14 @@ impl TicTacToeGame {
                 panic!("Cannot change player during the game!")
             }
         }else {
-            panic!("Invalid player number!")
+            panic!("{} Is not a valid player number! Use 1 or 2.", player_n)
         }
     }
 
     pub fn change_size(&mut self, size: usize, in_a_row_to_win: usize) {
+        if size < in_a_row_to_win {
+            panic!("Board size of {} is too small to make {} in a row!", size, in_a_row_to_win)
+        }
         self.board.x_size = size;
         self.board.y_size = size;
         self.board.seq_to_win = in_a_row_to_win;
