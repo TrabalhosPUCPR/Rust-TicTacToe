@@ -11,13 +11,13 @@ pub struct TicTacToeGame {
 }
 
 #[derive(Clone)]
-enum PlayerType {
+pub enum PlayerType {
     Human,
     Computer(Ai)
 }
 
 #[derive(Clone)]
-struct Player {
+pub struct Player {
     p_type: PlayerType,
     name: String,
     square_symbol: char
@@ -86,7 +86,6 @@ impl TicTacToeGame {
         }
         Ai::create(max_childs, max_layers, symbol, op_symbol)
     }
-    
     pub fn start_game(&mut self) {
         loop {
             match &mut self.game_state {
@@ -171,7 +170,6 @@ impl TicTacToeGame {
     fn set_current_player_to_2(&mut self) {
         self.game_state = GameState::Player(2, self.player2.clone());
     }
-    
     pub fn set_empty_space_symbol(&mut self, symbol: char) {
         self.board.empty_space_symbol = symbol;
     }
@@ -186,10 +184,10 @@ impl TicTacToeGame {
     }
     pub fn set_player2_symbol(&mut self, symbol: char) {
         self.player2.square_symbol = symbol;
-        if let PlayerType::Computer(mut ai) = self.player2.p_type.clone() {
+        if let PlayerType::Computer(ai) = &mut self.player2.p_type {
             ai.symbol = symbol
         }
-        if let PlayerType::Computer(ai) = &mut self.player2.p_type {
+        if let PlayerType::Computer(ai) = &mut self.player1.p_type {
             ai.op_symbol = symbol
         }
     }
@@ -203,6 +201,28 @@ impl TicTacToeGame {
             }
         }else {
             panic!("{} Is not a valid player number! Use 1 or 2.", player_n)
+        }
+    }
+
+    pub fn set_player(&mut self, player_n: usize, player: Player) {
+        match player_n {
+            1 => {
+                self.player1 = player;
+            }
+            2 => {
+                self.player2 = player
+            }
+            _ => {
+                panic!("{} is not a valid player number!", player_n)
+            }
+        }
+        if let PlayerType::Computer(ai) = &mut self.player1.p_type {
+            ai.op_symbol = self.player2.square_symbol;
+            ai.symbol = self.player1.square_symbol
+        }
+        if let PlayerType::Computer(ai) = &mut self.player2.p_type {
+            ai.op_symbol = self.player1.square_symbol;
+            ai.symbol = self.player2.square_symbol
         }
     }
 

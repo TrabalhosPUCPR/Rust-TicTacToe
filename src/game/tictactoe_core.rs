@@ -300,7 +300,6 @@ impl TicTacToe {
             1
         }
     }
-
     fn check_right_diag(&self, x: usize, y: usize, state: SquareState, stop_counting: bool) -> usize { // /
         let mut available_spaces_count = 1;
         let mut seq_count = 1;
