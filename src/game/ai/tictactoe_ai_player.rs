@@ -55,22 +55,30 @@ impl Ai {
                         }
                     }
                     TurnState::Continue => {
+                        /*
+                            THE FULL HEURISTIC IS BASED ON (from high priority to low):
+                                - Amount of same symbols in winnable distance in same line, column and diagonals
+                                - Amount of available axis to play after the move, that way he prioritizes spaces in the middle->cornes->center edges
+                                - Amount of empty spaces around the placedspace
+                        */
                         let mut squares_sum = possible_move_node.data.0.sum_of_same_squares_in_winnable_distance(square.0, square_state);
                         let x_size = possible_move_node.data.0.x_size;
                         let y_size = possible_move_node.data.0.y_size;
                         let coord = possible_move_node.data.0.get_index_coord(square.0);
+                        let mut available_axis = possible_move_node.data.0.check_n_of_available_axis(square.0, square_state) as i32;
                         let mut empty_sum: i32 = possible_move_node.data.0.empty_spaces_around(square.0) as i32;
-                        if ((coord.0 > 0 && coord.0 < x_size-1 && (coord.1 == 0 || coord.1 == y_size - 1)) ||
-                            (coord.1 > 0 && coord.1 < y_size - 1 && (coord.0 == 0 || coord.0 == x_size-1))) && empty_sum > 1 {
-                            empty_sum = 0 // removes a lot from heuristic if its on the center of the edge line/column
-                        }else if (coord.0 == 0 || coord.0 == x_size - 1) && empty_sum > 0 {
-                            empty_sum -= 1;
+                        if (coord.0 > 0 && coord.0 < x_size-1 && (coord.1 == 0 || coord.1 == y_size - 1)) ||
+                            (coord.1 > 0 && coord.1 < y_size - 1 && (coord.0 == 0 || coord.0 == x_size-1)) {
+                            empty_sum = 0 // removes the score if the position is in a bad space
+                        }else if (coord.0 == 0 || coord.0 == x_size - 1) && empty_sum > 1 {
+                            empty_sum -= 2; // reduces a few if the position is in the corner
                         }
                         if !own_turn {
                             squares_sum *= -1;
+                            available_axis *= -1;
                             empty_sum *= -1;
                         }
-                        possible_move_node.heuristic = squares_sum as f32 + (empty_sum as f32 / 10.0);
+                        possible_move_node.heuristic = squares_sum as f32 + (available_axis as f32 / 100.0) + (empty_sum as f32 / 10.0);
                     }
                     _ => {
                         panic!("Unexpected Ai Error")

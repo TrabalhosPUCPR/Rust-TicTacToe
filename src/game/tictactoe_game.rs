@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::io::{stdin, stdout, Write};
+use std::string::ToString;
 use crate::game::ai::tictactoe_ai_player::Ai;
 use crate::game::tictactoe_core::{SquareState, TicTacToe, TurnState};
 use crate::game::turn_logger::TurnLogger;
@@ -54,18 +55,21 @@ impl Display for TicTacToeGame {
     }
 }
 
-impl TicTacToeGame {
-    pub fn start_new_game_prompts() {
-        let title = "
+const TITLE: &str = "
   _______     _______      _______
  |__   __|   |__   __|    |__   __|
     | |   _  ___| | __ _  ___| | ___   ___
     | |  | |/ __| |/ _` |/ __| |/ _ \\ / _ \\
     | |  | | (__| | (_| | (__| | (_) |  __/
-    |_|  |_|\\___|_|\\__,_|\\___|_|\\___/ \\___|
-";
+    |_|  |_|\\___|_|\\__,_|\\___|_|\\___/ \\___|";
+const AUTHOR: &str = "KnightLeo";
+const REPO_LINK: &str = "https://github.com/TrabalhosPUCPR/Rust-TicTacToe";
+
+
+impl TicTacToeGame {
+    pub fn start_new_game_prompts() {
         loop {
-            println!("{}\n\nPlease choose an option:\n1-Load 1 player game\n2-Load 2 player game\n(default: 1)\n", title);
+            println!("{}      Made by {}\nRepo link: {}\n\nPlease choose an option:\n1-Load 1 player game\n2-Load 2 player game\n(default: 1)\n", TITLE, AUTHOR, REPO_LINK);
             let mut game;
             let n = TicTacToeGame::input_usize();
             if n.is_none() || n.unwrap() == 1 {

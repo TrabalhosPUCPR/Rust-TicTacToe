@@ -143,10 +143,10 @@ impl TicTacToe {
 
     fn check_game_over(&mut self, x: usize, y: usize, state: SquareState) -> TurnState {
         if self.filled >= self.seq_to_win + 2 &&
-            ((self.check_x(x, y, state, true) >= self.seq_to_win) ||
-                (self.check_y(x, y, state, true) == self.seq_to_win) ||
-                (self.check_left_diag(x, y, state, true) == self.seq_to_win) ||
-                (self.check_right_diag(x, y, state, true) == self.seq_to_win))  {
+            ((self.check_x(x, y, state, true, false) >= self.seq_to_win) ||
+                (self.check_y(x, y, state, true, false) == self.seq_to_win) ||
+                (self.check_left_diag(x, y, state, true, false) == self.seq_to_win) ||
+                (self.check_right_diag(x, y, state, true, false) == self.seq_to_win))  {
             return TurnState::Victory
         }
         if self.check_draw() {
@@ -157,10 +157,10 @@ impl TicTacToe {
 
     pub fn sum_of_same_squares_in_winnable_distance(&self, index: usize, state: SquareState) -> i32 {
         let coord = self.get_index_coord(index);
-        ((self.check_x(coord.0, coord.1, state, false) +
-            self.check_y(coord.0, coord.1, state, false) +
-            self.check_left_diag(coord.0, coord.1, state, false) +
-            self.check_right_diag(coord.0, coord.1, state, false)) - 4) as i32
+        ((self.check_x(coord.0, coord.1, state, false, false) +
+            self.check_y(coord.0, coord.1, state, false, false) +
+            self.check_left_diag(coord.0, coord.1, state, false, false) +
+            self.check_right_diag(coord.0, coord.1, state, false, false)) - 4) as i32
     }
 
     pub fn empty_spaces_around(&self, index: usize) -> usize {
@@ -202,7 +202,25 @@ impl TicTacToe {
         count as usize
     }
 
-    fn check_y(&self, x: usize, y: usize, state: SquareState, stop_counting: bool) -> usize { // |
+    pub fn check_n_of_available_axis(&self, index: usize, state: SquareState) -> usize {
+        let coord = self.get_index_coord(index);
+        let mut axis = 0;
+         if self.check_x(coord.0, coord.1, state, false, true) >= self.seq_to_win {
+             axis += 1
+         }
+        if self.check_y(coord.0, coord.1, state, false, true) >= self.seq_to_win {
+            axis += 1
+        }
+        if self.check_left_diag(coord.0, coord.1, state, false, true) >= self.seq_to_win {
+            axis += 1
+        }
+        if self.check_right_diag(coord.0, coord.1, state, false, true) >= self.seq_to_win {
+            axis += 1
+        }
+        axis
+    }
+
+    fn check_y(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // |
         let mut available_spaces_count = 1;
         let mut seq_count = 1;
         let mut dist = 1;
@@ -231,14 +249,16 @@ impl TicTacToe {
             available_spaces_count += 1;
             y_check += 1;
         }
-        return if available_spaces_count >= self.seq_to_win {
+        return if return_available_spaces {
+               available_spaces_count
+        }else if available_spaces_count >= self.seq_to_win {
             seq_count
         }else {
             1
         }
     }
 
-    fn check_x(&self, x: usize, y: usize, state: SquareState, stop_counting: bool) -> usize { // -
+    fn check_x(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // -
         let mut available_spaces_count = 1;
         let mut seq_count = 1;
         let mut x_check = x.checked_sub(1);
@@ -265,14 +285,16 @@ impl TicTacToe {
             dist += 1;
             x_check += 1;
         }
-        return if available_spaces_count >= self.seq_to_win {
+        return if return_available_spaces {
+            available_spaces_count
+        }else if available_spaces_count >= self.seq_to_win {
             seq_count
         }else {
             1
         }
     }
 
-    fn check_left_diag(&self, x: usize, y: usize, state: SquareState, stop_counting: bool) -> usize { // \
+    fn check_left_diag(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // \
         let mut available_spaces_count = 1;
         let mut seq_count = 1;
         let mut x_check = x.checked_sub(1);
@@ -305,13 +327,15 @@ impl TicTacToe {
             y_check += 1;
             dist += 1
         }
-        return if available_spaces_count >= self.seq_to_win {
+        return if return_available_spaces {
+            available_spaces_count
+        }else if available_spaces_count >= self.seq_to_win {
             seq_count
         }else {
             1
         }
     }
-    fn check_right_diag(&self, x: usize, y: usize, state: SquareState, stop_counting: bool) -> usize { // /
+    fn check_right_diag(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // /
         let mut available_spaces_count = 1;
         let mut seq_count = 1;
         let mut x_check = x.checked_sub(1);
@@ -344,7 +368,9 @@ impl TicTacToe {
             y_check = y_check.unwrap().checked_sub(1);
             dist += 1
         }
-        return if available_spaces_count >= self.seq_to_win {
+        return if return_available_spaces {
+            available_spaces_count
+        }else if available_spaces_count >= self.seq_to_win {
             seq_count
         }else {
             1
