@@ -26,6 +26,17 @@ pub struct TicTacToe {
     pub filled: usize,
 }
 
+impl Display for TurnState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        return match self {
+            TurnState::Continue => write!(f, "Continue"),
+            TurnState::Draw => write!(f, "Draw"),
+            TurnState::Error => write!(f, "Error"),
+            TurnState::Victory => write!(f, "Victory"),
+        }
+    }
+}
+
 impl PartialEq for TicTacToe {
     fn eq(&self, other: &Self) -> bool {
         self.squares.eq(&other.squares)
@@ -150,7 +161,6 @@ impl TicTacToe {
             self.check_y(coord.0, coord.1, state, false) +
             self.check_left_diag(coord.0, coord.1, state, false) +
             self.check_right_diag(coord.0, coord.1, state, false)) - 4) as i32
-
     }
 
     pub fn empty_spaces_around(&self, index: usize) -> usize {
@@ -169,17 +179,18 @@ impl TicTacToe {
             }
         }
         let mut x = 0;
+        let mut n = 2;
         if coord.0 != 0 {
-            x = coord.0 - 1
+            x = coord.0 - 1;
+            n = 3;
         }
-        for i in 0..3 {
-            if let Some(i) = coord.1.checked_sub(1) {
-                if let Some(s) = self.get_square(x + i, coord.1 - 1) {
+        let top_y =  coord.1.checked_sub(1);
+        for i in 0..n {
+            if let Some(y) = top_y {
+                if let Some(s) = self.get_square(x + i, y) {
                     if let SquareState::None = s {
                         count += 1
                     }
-                }else {
-                    break
                 }
             }
             if let Some(s) = self.get_square(x + i, coord.1 + 1) {

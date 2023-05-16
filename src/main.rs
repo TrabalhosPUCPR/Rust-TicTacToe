@@ -1,17 +1,15 @@
-use std::thread;
-use std::time::Duration;
-use crate::game::tictactoe_game::{AiDifficulties, TicTacToeGame};
+use crate::game::tictactoe_game::{TicTacToeGame};
 mod game;
 
-const SIZE: usize = 4;
-
 fn main() {
+    /*
     let mut game: TicTacToeGame;
     //game: TicTacToeGame = TicTacToeGame::load_default_2player_game();
     game = TicTacToeGame::load_default_1player_game(AiDifficulties::Hard);
     //game = TicTacToeGame::load_default_ai_game(AiDifficulties::Hard, AiDifficulties::Hard);
-    game.change_size(SIZE, 4);
+    game.change_size(4, 4);
     game.set_first_player(2);
+    game.show_turn_info_mode = true;
 
     loop {
         game.start_game();
@@ -20,6 +18,8 @@ fn main() {
         thread::sleep(Duration::from_millis(5000));
         game.reload_game();
     }
+    */
+    TicTacToeGame::start_new_game_prompts()
 }
 
 

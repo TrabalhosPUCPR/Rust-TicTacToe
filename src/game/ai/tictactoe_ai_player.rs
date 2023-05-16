@@ -1,4 +1,4 @@
-use crate::game::ai::tree::Node;
+use crate::game::ai::node::Node;
 use crate::game::tictactoe_core::{SquareState, TicTacToe, TurnState};
 
 #[derive(Clone)]
@@ -56,7 +56,16 @@ impl Ai {
                     }
                     TurnState::Continue => {
                         let mut squares_sum = possible_move_node.data.0.sum_of_same_squares_in_winnable_distance(square.0, square_state);
+                        let x_size = possible_move_node.data.0.x_size;
+                        let y_size = possible_move_node.data.0.y_size;
+                        let coord = possible_move_node.data.0.get_index_coord(square.0);
                         let mut empty_sum: i32 = possible_move_node.data.0.empty_spaces_around(square.0) as i32;
+                        if ((coord.0 > 0 && coord.0 < x_size-1 && (coord.1 == 0 || coord.1 == y_size - 1)) ||
+                            (coord.1 > 0 && coord.1 < y_size - 1 && (coord.0 == 0 || coord.0 == x_size-1))) && empty_sum > 1 {
+                            empty_sum = 0 // removes a lot from heuristic if its on the center of the edge line/column
+                        }else if (coord.0 == 0 || coord.0 == x_size - 1) && empty_sum > 0 {
+                            empty_sum -= 1;
+                        }
                         if !own_turn {
                             squares_sum *= -1;
                             empty_sum *= -1;
@@ -65,21 +74,21 @@ impl Ai {
                     }
                     _ => {
                         panic!("Unexpected Ai Error")
-                    }// should not match TurnState::Error
+                    }
                 }
                 possible_move_node.data.2 = move_state;
                 parent.children.push(possible_move_node);
             }
         }
-        let mut sorted = parent.get_children_sorted(!own_turn);
-        if self.max_node_childs > 0 && sorted.len() > self.max_node_childs {
-            sorted = sorted.split_at(self.max_node_childs).0.to_owned();
+        let mut children = parent.get_children_sorted(!own_turn);
+        if self.max_node_childs > 0 && children.len() > self.max_node_childs {
+            children = children.split_at(self.max_node_childs).0.to_owned();
         }
-        for c in sorted.iter_mut() {
+        for c in children.iter_mut() {
             if (self.max_layers == 0 || layer + 1 < self.max_layers) && c.data.2 == TurnState::Continue {
                 self.load_moves_tree(c, layer + 1, !own_turn);
             }
         }
-        parent.children = sorted
+        parent.children = children
     }
 }
