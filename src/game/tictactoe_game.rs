@@ -69,7 +69,7 @@ const REPO_LINK: &str = "https://github.com/TrabalhosPUCPR/Rust-TicTacToe";
 impl TicTacToeGame {
     pub fn start_new_game_prompts() {
         loop {
-            println!("{}      Made by {}\nRepo link: {}\n\nPlease choose an option:\n1-Load 1 player game\n2-Load 2 player game\n(default: 1)\n", TITLE, AUTHOR, REPO_LINK);
+            println!("{}\t\tMade by {}\nRepo link: {}\n\nPlease choose an option:\n1-Load 1 player game\n2-Load 2 player game\n(default: 1)\n", TITLE, AUTHOR, REPO_LINK);
             let mut game;
             let n = TicTacToeGame::input_usize();
             if n.is_none() || n.unwrap() == 1 {
@@ -179,7 +179,7 @@ impl TicTacToeGame {
                 max_layers = 3;
             }
             AiDifficulties::Hard => {
-                max_childs = 25;
+                max_childs = 0;
                 max_layers = 4;
             }
         }

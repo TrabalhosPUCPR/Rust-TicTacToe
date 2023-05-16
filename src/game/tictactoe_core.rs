@@ -1,3 +1,4 @@
+use std::env::consts::FAMILY;
 use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, PartialEq)]
@@ -65,7 +66,21 @@ impl Default for TicTacToe {
 impl Display for TicTacToe {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
-        let mut lane = 0;
+        let mut lane = 1;
+        let margin = self.squares.len().to_string().len() + 5;
+        let mut col = 1;
+        for _ in 0..(margin/2) {
+            s.push_str(" ")
+        }
+        for i in 0..(self.x_size*3) {
+            if i % 3 == 0 {
+                s.push_str(format!(" {}", col).as_str());
+                col += 1
+            }else {
+                s.push_str(" ")
+            }
+        }
+        s.push_str(format!("\n{}- ", lane).as_str());
         for i in 0..self.squares.len() {
             match self.squares.get(i).unwrap() {
                 SquareState::Filled(c) => {
@@ -75,18 +90,21 @@ impl Display for TicTacToe {
                     s.push_str(&*format!(" {} ", self.empty_space_symbol))
                 }
             }
-            if (i > 0) && ((i + 1) % self.x_size == 0) && !(lane + 1 == self.y_size) {
+            if (i > 0) && ((i + 1) % self.x_size == 0) && !(lane == self.y_size) {
                 s.push_str("\n");
+                for _ in 0..margin/2 {
+                    s.push_str(" ");
+                }
                 for _ in 0..(self.x_size*3)+self.x_size-1 {
                     s.push(self.horizontal_spacer)
                 }
-                s.push_str("\n");
-                lane += 1
+                lane += 1;
+                s.push_str(format!("\n{}- ", lane).as_str());
             }else if i < self.squares.len() - 1 {
                 s.push(self.vertical_spacer)
             }
         }
-        write!(f, "{}", s)
+        write!(f, "{}\n", s)
     }
 }
 
@@ -256,6 +274,18 @@ impl TicTacToe {
         }else {
             1
         }
+    }
+
+    pub fn check_blocked_op_spaces(&self, index: usize, op_placed_square: SquareState) -> usize {
+        let mut count = 0;
+        let coord = self.get_index_coord(index);
+
+        count += self.check_x(coord.0, coord.1, op_placed_square, false, false);
+        count += self.check_y(coord.0, coord.1, op_placed_square, false, false);
+        count += self.check_left_diag(coord.0, coord.1, op_placed_square, false, false);
+        count += self.check_right_diag(coord.0, coord.1, op_placed_square, false, false);
+
+        count - 4 as usize
     }
 
     fn check_x(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // -
