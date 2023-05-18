@@ -1,6 +1,8 @@
 use std::fmt::{Display, Formatter};
 use std::io::{stdin, stdout, Write};
 use std::string::ToString;
+use std::thread::sleep;
+use std::time::Duration;
 use crate::game::ai::tictactoe_ai_player::Ai;
 use crate::game::tictactoe_core::{SquareState, TicTacToe, TurnState};
 use crate::game::turn_logger::TurnLogger;
@@ -179,7 +181,7 @@ impl TicTacToeGame {
                 max_layers = 3;
             }
             AiDifficulties::Hard => {
-                max_childs = 0;
+                max_childs = 20;
                 max_layers = 4;
             }
         }

@@ -1,4 +1,3 @@
-use std::env::consts::FAMILY;
 use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, PartialEq)]
@@ -65,41 +64,62 @@ impl Default for TicTacToe {
 
 impl Display for TicTacToe {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut s = String::new();
-        let mut lane = 1;
-        let margin = self.squares.len().to_string().len() + 5;
-        let mut col = 1;
-        for _ in 0..(margin/2) {
-            s.push_str(" ")
-        }
-        for i in 0..(self.x_size*3) {
-            if i % 3 == 0 {
-                s.push_str(format!(" {}", col).as_str());
-                col += 1
-            }else {
+        fn add_col_margin(s: &mut String, col_margin: usize){
+            for _ in 0..col_margin {
                 s.push_str(" ")
             }
         }
-        s.push_str(format!("\n{}- ", lane).as_str());
+        fn add_line_margin(s: &mut String, line_margin: usize){
+            for _ in 1..line_margin {
+                s.push_str(" ")
+            }
+        }
+
+
+        let mut s = String::new();
+        let mut lane = 1;
+        let mut col_margin = self.y_size.to_string().len()+4;
+        if col_margin % 2 == 0 {
+            col_margin += 1;
+        }
+        let mut line_margin = self.x_size.to_string().len();
+        let mut col = 1;
+        add_col_margin(&mut s, col_margin/2);
+        for i in 0..(self.x_size*3) {
+            if i % 3 == 0 {
+                //add_col_margin(&mut s, (col_margin/2)-1);
+                s.push_str(format!(" {}", col).as_str());
+                col += 1
+            }else {
+                //add_col_margin(&mut s, (col_margin/2)-1);
+                s.push_str(" ");
+            }
+        }
+        s.push_str(format!("\n{}-", lane).as_str());
+        add_line_margin(&mut s, line_margin);
         for i in 0..self.squares.len() {
             match self.squares.get(i).unwrap() {
                 SquareState::Filled(c) => {
-                    s.push_str(&*format!(" {} ", c))
+                    //add_col_margin(&mut s, col_margin/2);
+                    s.push_str(&*format!(" {} ", c));
                 }
                 SquareState::None => {
-                    s.push_str(&*format!(" {} ", self.empty_space_symbol))
+                    //add_col_margin(&mut s, col_margin/2);
+                    s.push_str(&*format!(" {} ", self.empty_space_symbol));
                 }
             }
             if (i > 0) && ((i + 1) % self.x_size == 0) && !(lane == self.y_size) {
                 s.push_str("\n");
-                for _ in 0..margin/2 {
-                    s.push_str(" ");
-                }
+                add_col_margin(&mut s, col_margin/2);
                 for _ in 0..(self.x_size*3)+self.x_size-1 {
                     s.push(self.horizontal_spacer)
                 }
                 lane += 1;
-                s.push_str(format!("\n{}- ", lane).as_str());
+                s.push_str(format!("\n{}-", lane).as_str());
+                add_line_margin(&mut s, line_margin);
+                if (lane+1).to_string().len() > lane.to_string().len() {
+                    line_margin -= 1
+                }
             }else if i < self.squares.len() - 1 {
                 s.push(self.vertical_spacer)
             }
@@ -173,7 +193,7 @@ impl TicTacToe {
         return TurnState::Continue
     }
 
-    pub fn sum_of_same_squares_in_winnable_distance(&self, index: usize, state: SquareState) -> i32 {
+    pub fn sum_squares_in_winnable_distance(&self, index: usize, state: SquareState) -> i32 {
         let coord = self.get_index_coord(index);
         ((self.check_x(coord.0, coord.1, state, false, false) +
             self.check_y(coord.0, coord.1, state, false, false) +
@@ -181,18 +201,18 @@ impl TicTacToe {
             self.check_right_diag(coord.0, coord.1, state, false, false)) - 4) as i32
     }
 
-    pub fn empty_spaces_around(&self, index: usize) -> usize {
+    pub fn spaces_of_around(&self, index: usize, state: SquareState) -> usize {
         let coord = self.get_index_coord(index);
         let mut count = 0;
         if let Some(n) = coord.0.checked_sub(1) {
             if let Some(s) = self.get_square(n, coord.1) {
-                if let SquareState::None = s {
+                if state == s.clone() {
                     count += 1
                 }
             }
         }
         if let Some(s) = self.get_square(coord.0 + 1, coord.1) {
-            if let SquareState::None = s {
+            if state == s.clone() {
                 count += 1
             }
         }
@@ -206,13 +226,13 @@ impl TicTacToe {
         for i in 0..n {
             if let Some(y) = top_y {
                 if let Some(s) = self.get_square(x + i, y) {
-                    if let SquareState::None = s {
+                    if state == s.clone() {
                         count += 1
                     }
                 }
             }
             if let Some(s) = self.get_square(x + i, coord.1 + 1) {
-                if let SquareState::None = s {
+                if state == s.clone() {
                     count += 1
                 }
             }
@@ -238,6 +258,18 @@ impl TicTacToe {
         axis
     }
 
+    pub fn check_blocked_op_spaces(&self, index: usize, op_placed_square: SquareState) -> [usize; 4] {
+        let mut count: [usize; 4] = [0,0,0,0];
+        let coord = self.get_index_coord(index);
+
+        count[0] = self.check_x(coord.0, coord.1, op_placed_square, false, false) - 1;
+        count[1] = self.check_y(coord.0, coord.1, op_placed_square, false, false) - 1;
+        count[2] = self.check_left_diag(coord.0, coord.1, op_placed_square, false, false) - 1;
+        count[3] = self.check_right_diag(coord.0, coord.1, op_placed_square, false, false) - 1;
+
+        count
+    }
+
     fn check_y(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // |
         let mut available_spaces_count = 1;
         let mut seq_count = 1;
@@ -256,7 +288,7 @@ impl TicTacToe {
         }
         let mut y_check = y + 1; // then looks below
         dist = 1;
-        while dist < self.seq_to_win && y_check < self.x_size {
+        while dist <= self.seq_to_win && y_check < self.x_size {
             let square_state = self.get_square(x, y_check).unwrap().clone();
             if square_state == state {
                 seq_count += 1;
@@ -274,18 +306,6 @@ impl TicTacToe {
         }else {
             1
         }
-    }
-
-    pub fn check_blocked_op_spaces(&self, index: usize, op_placed_square: SquareState) -> usize {
-        let mut count = 0;
-        let coord = self.get_index_coord(index);
-
-        count += self.check_x(coord.0, coord.1, op_placed_square, false, false);
-        count += self.check_y(coord.0, coord.1, op_placed_square, false, false);
-        count += self.check_left_diag(coord.0, coord.1, op_placed_square, false, false);
-        count += self.check_right_diag(coord.0, coord.1, op_placed_square, false, false);
-
-        count - 4 as usize
     }
 
     fn check_x(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // -

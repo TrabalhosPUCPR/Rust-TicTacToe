@@ -8,7 +8,7 @@ pub struct Node<T> {
     pub heuristic: f32
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 enum MinMaxNode<T> {
     Alpha(Option<Node<T>>),
     Beta(Option<Node<T>>),
@@ -90,7 +90,7 @@ impl<T> MinMaxNode<T> where T: Clone + PartialEq{
 
 impl<T> Node<T> {
     pub fn get_true_utility(&self) -> f32 {
-        self.utility as f32 + (self.heuristic as f32 / 100.0)
+        self.utility as f32 + (self.heuristic as f32 / 1000.0)
     }
     pub fn is_terminal(&self) -> bool {
         self.children.is_empty()
@@ -144,6 +144,12 @@ impl<T> Node<T> where T: Clone + PartialEq {
             }
             if let Some(n) = next.0 {
                 self_node_type.verify_and_set(n);
+                let parent_node_type_binding = parent_node_type.clone();
+                if self_node_type != parent_node_type_binding {
+                    if !parent_node_type.verify(self_node_type.clone().full_unwrap()) {
+                        return (None, None)
+                    }
+                }
             }
         }
         if self_node_type.is_some() && parent_node_type.verify(self_node_type.clone().full_unwrap()) {

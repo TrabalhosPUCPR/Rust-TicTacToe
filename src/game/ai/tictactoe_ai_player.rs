@@ -60,31 +60,48 @@ impl Ai {
                                 - Amount of same symbols in winnable distance in same line, column and diagonals
                                 - Amount of symbols from oponent blocked
                                 - Amount of available axis to play after the move, that way he prioritizes spaces in the middle->cornes->center edges
-                                - Amount of empty spaces around the placedspace
+                                - Amount of empty spaces around the placed space
                                 - Position of the move, if its on the center edges, the empty spaces sum gets cleared, removing from the full score
                         */
-                        let mut squares_sum = possible_move_node.data.0.sum_of_same_squares_in_winnable_distance(square.0, square_state);
+                        let mut attack_score = possible_move_node.data.0.sum_squares_in_winnable_distance(square.0, square_state) as f32;
                         let mut available_axis = possible_move_node.data.0.check_n_of_available_axis(square.0, square_state) as i32;
-                        let mut empty_sum = possible_move_node.data.0.empty_spaces_around(square.0) as i32;
-                        let mut blocked = possible_move_node.data.0.check_blocked_op_spaces(square.0, SquareState::Filled(self.op_symbol)) as i32;
+                        let mut empty_space_around_score = possible_move_node.data.0.spaces_of_around(square.0, SquareState::None) as i32;
+                        let mut defense_score = possible_move_node.data.0.sum_squares_in_winnable_distance(square.0, SquareState::Filled(self.op_symbol)) as f32;
 
+                        if possible_move_node.data.0.seq_to_win.pow(2) < possible_move_node.data.0.size() {
+                            empty_space_around_score = 0;
+                            let blocked_directions = possible_move_node.data.0.check_blocked_op_spaces(square.0, SquareState::Filled(self.op_symbol));
+                            let mut defense_prio = false;
+                            for i in blocked_directions {
+                                // increases the score if the opponent next move would finish the game
+                                if (parent.data.0.seq_to_win % 2 != 0 && i as f32 >= (possible_move_node.data.0.seq_to_win as f32 / 2.0).ceil()) ||
+                                    (parent.data.0.seq_to_win % 2 == 0 && i as f32 >= (possible_move_node.data.0.seq_to_win as f32 - 2.0)) {
+                                    defense_score = i as f32 * 9.0;
+                                    defense_prio = true;
+                                    break
+                                }
+                            }
+                            if !defense_prio {
+                                defense_score /= 10.0; // else, its priority gets lowered, since the ai can focus on attacking
+                            }
+                        }
                         let x_size = possible_move_node.data.0.x_size;
                         let y_size = possible_move_node.data.0.y_size;
                         let coord = possible_move_node.data.0.get_index_coord(square.0);
                         if coord.1 == 0 || coord.1 == y_size - 1 {
                             if coord.0 > 0 && coord.0 < x_size-1 {
-                                empty_sum = 0
+                                empty_space_around_score = 0
                             }
                         }else if coord.0 == 0 || coord.0 == x_size-1 {
-                            empty_sum = 0
+                            empty_space_around_score = 0
                         }
                         if !own_turn {
-                            squares_sum *= -1;
+                            attack_score *= -1.0;
                             available_axis *= -1;
-                            empty_sum *= -1;
-                            blocked *= -1;
+                            empty_space_around_score *= -1;
+                            defense_score *= -1.0;
                         }
-                        possible_move_node.heuristic = squares_sum as f32 + (blocked as f32 / 10.0) + ((empty_sum + available_axis) as f32 / 100.0);
+                        possible_move_node.heuristic = (attack_score + defense_score) as f32 + ((available_axis + empty_space_around_score) as f32 / 100.0);
                     }
                     _ => {
                         panic!("Unexpected Ai Error")
