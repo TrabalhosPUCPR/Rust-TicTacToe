@@ -122,7 +122,7 @@ impl<T> Node<T> where T: Clone + PartialEq {
     }
     pub fn get_children_sorted(&self, max: bool) -> Vec<Node<T>> {
         let mut children = self.children.clone();
-        if max {
+        if !max {
             children.sort_unstable_by(|a, b| { a.partial_cmp(b).unwrap() });
         }else {
             children.sort_unstable_by(|a, b| { b.partial_cmp(a).unwrap() });

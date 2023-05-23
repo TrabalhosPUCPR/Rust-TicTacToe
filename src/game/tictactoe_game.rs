@@ -169,7 +169,7 @@ impl TicTacToeGame {
     }
     
     fn create_ai(difficulty: AiDifficulties, symbol: char, op_symbol: char) -> Ai {
-        let max_childs: usize;
+        let max_childs: usize; // gets incremented every turn
         let max_layers: usize;
         match difficulty { // 0 == infinite
             AiDifficulties::Easy => {
@@ -181,8 +181,8 @@ impl TicTacToeGame {
                 max_layers = 3;
             }
             AiDifficulties::Hard => {
-                max_childs = 20;
-                max_layers = 4;
+                max_childs = 10;
+                max_layers = 6;
             }
         }
         Ai::create(max_childs, max_layers, symbol, op_symbol)

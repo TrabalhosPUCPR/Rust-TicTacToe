@@ -275,7 +275,7 @@ impl TicTacToe {
         let mut seq_count = 1;
         let mut dist = 1;
         let mut y_check = y.checked_sub(1); // starts looking above, checked sub is to avoid going below 0
-        while dist <= self.seq_to_win && y_check.is_some() {
+        while dist < self.seq_to_win && y_check.is_some() {
             let square_state = self.get_square(x, y_check.unwrap()).unwrap().clone();
             if square_state == state {
                 seq_count += 1;
@@ -288,7 +288,7 @@ impl TicTacToe {
         }
         let mut y_check = y + 1; // then looks below
         dist = 1;
-        while dist <= self.seq_to_win && y_check < self.x_size {
+        while dist < self.seq_to_win && y_check < self.x_size {
             let square_state = self.get_square(x, y_check).unwrap().clone();
             if square_state == state {
                 seq_count += 1;
@@ -313,7 +313,7 @@ impl TicTacToe {
         let mut seq_count = 1;
         let mut x_check = x.checked_sub(1);
         let mut dist = 1;
-        while dist <= self.seq_to_win && x_check.is_some() {
+        while dist < self.seq_to_win && x_check.is_some() {
             let square_state = self.get_square(x_check.unwrap(), y).unwrap().clone();
             if square_state == state {
                 seq_count += 1;
@@ -324,7 +324,7 @@ impl TicTacToe {
         }
         let mut x_check = x + 1; // then looks to the right
         dist = 1;
-        while dist <= self.seq_to_win && x_check < self.x_size {
+        while dist < self.seq_to_win && x_check < self.x_size {
             let square_state = self.get_square(x_check, y).unwrap().clone();
             if  square_state == state {
                 seq_count += 1;
@@ -350,7 +350,7 @@ impl TicTacToe {
         let mut x_check = x.checked_sub(1);
         let mut y_check = y.checked_sub(1);
         let mut dist = 1;
-        while dist <= self.seq_to_win && x_check.is_some() && y_check.is_some() {
+        while dist < self.seq_to_win && x_check.is_some() && y_check.is_some() {
             let square_state = self.get_square(x_check.unwrap(), y_check.unwrap()).unwrap().clone();
             if square_state == state {
                 seq_count += 1;
@@ -365,7 +365,7 @@ impl TicTacToe {
         let mut x_check = x + 1;
         let mut y_check = y + 1;
         dist = 1;
-        while dist <= self.seq_to_win && x_check < self.x_size && y_check < self.y_size {
+        while dist < self.seq_to_win && x_check < self.x_size && y_check < self.y_size {
             let square_state = self.get_square(x_check, y_check).unwrap().clone();
             if square_state == state {
                 seq_count += 1;
@@ -391,7 +391,7 @@ impl TicTacToe {
         let mut x_check = x.checked_sub(1);
         let mut y_check = y + 1;
         let mut dist = 1;
-        while dist <= self.seq_to_win && x_check.is_some() && y_check < self.y_size {
+        while dist < self.seq_to_win && x_check.is_some() && y_check < self.y_size {
             let square_state = self.get_square(x_check.unwrap(), y_check).unwrap().clone();
             if square_state == state {
                 seq_count += 1;
@@ -406,7 +406,7 @@ impl TicTacToe {
         let mut x_check = x + 1;
         let mut y_check = y.checked_sub(1);
         dist = 1;
-        while dist <= self.seq_to_win && x_check < self.x_size && y_check.is_some() {
+        while dist < self.seq_to_win && x_check < self.x_size && y_check.is_some() {
             let square_state = self.get_square(x_check, y_check.unwrap()).unwrap().clone();
             if square_state == state {
                 seq_count += 1;

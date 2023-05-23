@@ -26,6 +26,7 @@ impl Ai {
 
         let next_action = root.minimax(true);
         let coord = current_board.get_index_coord(next_action.data.1);
+        self.max_node_childs += 1;
         return coord
     }
     fn load_moves_tree(&self, parent: &mut Node<(TicTacToe, usize, TurnState)>, layer: usize, own_turn: bool) {
@@ -85,6 +86,10 @@ impl Ai {
                                 defense_score /= 10.0; // else, its priority gets lowered, since the ai can focus on attacking
                             }
                         }
+                        if defense_score < (possible_move_node.data.0.seq_to_win - 1) as f32 {
+                            attack_score *= 2.0;
+                            defense_score /= 10.0
+                        }
                         let x_size = possible_move_node.data.0.x_size;
                         let y_size = possible_move_node.data.0.y_size;
                         let coord = possible_move_node.data.0.get_index_coord(square.0);
@@ -111,7 +116,7 @@ impl Ai {
                 parent.children.push(possible_move_node);
             }
         }
-        let mut children = parent.get_children_sorted(!own_turn);
+        let mut children = parent.get_children_sorted(own_turn);
         if self.max_node_childs > 0 && children.len() > self.max_node_childs {
             children = children.split_at(self.max_node_childs).0.to_owned();
         }
@@ -120,6 +125,7 @@ impl Ai {
                 self.load_moves_tree(c, layer + 1, !own_turn);
             }
         }
-        parent.children = children
+        parent.children = children;
+        parent.children = vec![parent.minimax(own_turn)]
     }
 }
