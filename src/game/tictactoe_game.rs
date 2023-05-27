@@ -1,8 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::io::{stdin, stdout, Write};
 use std::string::ToString;
-use std::thread::sleep;
-use std::time::Duration;
 use crate::game::ai::tictactoe_ai_player::Ai;
 use crate::game::tictactoe_core::{SquareState, TicTacToe, TurnState};
 use crate::game::turn_logger::TurnLogger;
@@ -174,14 +172,14 @@ impl TicTacToeGame {
         match difficulty { // 0 == infinite
             AiDifficulties::Easy => {
                 max_childs = 7;
-                max_layers = 2;
+                max_layers = 1;
             }
             AiDifficulties::Medium => {
-                max_childs = 14;
-                max_layers = 3;
+                max_childs = 6;
+                max_layers = 2;
             }
             AiDifficulties::Hard => {
-                max_childs = 10;
+                max_childs = 8;
                 max_layers = 6;
             }
         }

@@ -20,6 +20,7 @@ pub struct TicTacToe {
     pub y_size: usize,
     horizontal_spacer: char,
     vertical_spacer: char,
+    cross_spacer: char,
     pub squares: Vec<SquareState>,
     pub seq_to_win: usize,
     pub empty_space_symbol: char,
@@ -52,14 +53,22 @@ impl Default for TicTacToe {
         TicTacToe {
             x_size: 3,
             y_size: 3,
-            horizontal_spacer: '-',
-            vertical_spacer: '|',
+            horizontal_spacer: '─',
+            vertical_spacer: '│',
+            cross_spacer: '┼',
             squares: vec![SquareState::None; 9],
             seq_to_win: 3,
             empty_space_symbol: ' ',
             filled: 0
         }
     }
+}
+
+pub trait SpecialBoardChecks {
+    fn sum_squares_in_winnable_distance(&self, index: usize, state: SquareState, return_highest: bool) -> i32;
+    fn spaces_of_around(&self, index: usize, state: SquareState) -> usize;
+    fn check_n_of_available_axis(&self, index: usize, state: SquareState) -> usize;
+    fn check_blocked_op_spaces(&self, index: usize, op_placed_square: SquareState) -> [usize; 4];
 }
 
 impl Display for TicTacToe {
@@ -74,8 +83,6 @@ impl Display for TicTacToe {
                 s.push_str(" ")
             }
         }
-
-
         let mut s = String::new();
         let mut lane = 1;
         let mut col_margin = self.y_size.to_string().len()+4;
@@ -111,8 +118,12 @@ impl Display for TicTacToe {
             if (i > 0) && ((i + 1) % self.x_size == 0) && !(lane == self.y_size) {
                 s.push_str("\n");
                 add_col_margin(&mut s, col_margin/2);
-                for _ in 0..(self.x_size*3)+self.x_size-1 {
-                    s.push(self.horizontal_spacer)
+                for i in 0..(self.x_size*3)+self.x_size-1 {
+                    if (i + 1) % 4 == 0 {
+                        s.push(self.cross_spacer)
+                    }else {
+                        s.push(self.horizontal_spacer)
+                    }
                 }
                 lane += 1;
                 s.push_str(format!("\n{}-", lane).as_str());
@@ -128,18 +139,109 @@ impl Display for TicTacToe {
     }
 }
 
+impl SpecialBoardChecks for TicTacToe {
+    fn sum_squares_in_winnable_distance(&self, index: usize, state: SquareState, return_highest: bool) -> i32 {
+        let coord = self.get_index_coord(index);
+        return if return_highest {
+            let mut count: [usize; 4] = [0,0,0,0];
+            count[0] = self.check_x(coord.0, coord.1, state, false, false) - 1;
+            count[1] = self.check_y(coord.0, coord.1, state, false, false) - 1;
+            count[2] = self.check_left_diag(coord.0, coord.1, state, false, false) - 1;
+            count[3] = self.check_right_diag(coord.0, coord.1, state, false, false) - 1;
+            let mut highest = count[0];
+            for i in 1..count.len() {
+                if count[i] > highest {
+                    highest = count[i]
+                }
+            }
+            return highest as i32;
+        }else {
+            ((self.check_x(coord.0, coord.1, state, false, false) +
+                self.check_y(coord.0, coord.1, state, false, false) +
+                self.check_left_diag(coord.0, coord.1, state, false, false) +
+                self.check_right_diag(coord.0, coord.1, state, false, false)) - 4) as i32
+        }
+    }
+
+    fn spaces_of_around(&self, index: usize, state: SquareState) -> usize {
+        let coord = self.get_index_coord(index);
+        let mut count = 0;
+        if let Some(n) = coord.0.checked_sub(1) {
+            if let Some(s) = self.get_square(n, coord.1) {
+                if state == s.clone() {
+                    count += 1
+                }
+            }
+        }
+        if let Some(s) = self.get_square(coord.0 + 1, coord.1) {
+            if state == s.clone() {
+                count += 1
+            }
+        }
+        let mut x = 0;
+        let mut n = 2;
+        if coord.0 != 0 {
+            x = coord.0 - 1;
+            n = 3;
+        }
+        let top_y =  coord.1.checked_sub(1);
+        for i in 0..n {
+            if let Some(y) = top_y {
+                if let Some(s) = self.get_square(x + i, y) {
+                    if state == s.clone() {
+                        count += 1
+                    }
+                }
+            }
+            if let Some(s) = self.get_square(x + i, coord.1 + 1) {
+                if state == s.clone() {
+                    count += 1
+                }
+            }
+        }
+        count as usize
+    }
+
+    fn check_n_of_available_axis(&self, index: usize, state: SquareState) -> usize {
+        let coord = self.get_index_coord(index);
+        let mut axis = 0;
+        if self.check_x(coord.0, coord.1, state, false, true) >= self.seq_to_win {
+            axis += 1
+        }
+        if self.check_y(coord.0, coord.1, state, false, true) >= self.seq_to_win {
+            axis += 1
+        }
+        if self.check_left_diag(coord.0, coord.1, state, false, true) >= self.seq_to_win {
+            axis += 1
+        }
+        if self.check_right_diag(coord.0, coord.1, state, false, true) >= self.seq_to_win {
+            axis += 1
+        }
+        axis
+    }
+
+    fn check_blocked_op_spaces(&self, index: usize, op_placed_square: SquareState) -> [usize; 4] {
+        let mut count: [usize; 4] = [0,0,0,0];
+        let coord = self.get_index_coord(index);
+
+        count[0] = self.check_x(coord.0, coord.1, op_placed_square, false, false) - 1;
+        count[1] = self.check_y(coord.0, coord.1, op_placed_square, false, false) - 1;
+        count[2] = self.check_left_diag(coord.0, coord.1, op_placed_square, false, false) - 1;
+        count[3] = self.check_right_diag(coord.0, coord.1, op_placed_square, false, false) - 1;
+
+        count
+    }
+}
+
 impl TicTacToe {
     pub fn new(x_size: usize, y_size: usize, seq_to_win: usize, empty_space_symbol: char) -> TicTacToe {
-        TicTacToe {
-            x_size,
-            y_size,
-            horizontal_spacer: '-',
-            vertical_spacer: '|',
-            squares: vec![SquareState::None; x_size*y_size],
-            seq_to_win,
-            empty_space_symbol,
-            filled: 0
-        }
+        let mut t = TicTacToe::default();
+        t.empty_space_symbol = empty_space_symbol;
+        t.y_size = y_size;
+        t.x_size = x_size;
+        t.seq_to_win = seq_to_win;
+        t.squares = vec![SquareState::None; x_size*y_size];
+        t
     }
 
     pub fn get_square(&self, x: usize, y: usize) -> Option<&SquareState> {
@@ -193,238 +295,78 @@ impl TicTacToe {
         return TurnState::Continue
     }
 
-    pub fn sum_squares_in_winnable_distance(&self, index: usize, state: SquareState) -> i32 {
-        let coord = self.get_index_coord(index);
-        ((self.check_x(coord.0, coord.1, state, false, false) +
-            self.check_y(coord.0, coord.1, state, false, false) +
-            self.check_left_diag(coord.0, coord.1, state, false, false) +
-            self.check_right_diag(coord.0, coord.1, state, false, false)) - 4) as i32
-    }
-
-    pub fn spaces_of_around(&self, index: usize, state: SquareState) -> usize {
-        let coord = self.get_index_coord(index);
-        let mut count = 0;
-        if let Some(n) = coord.0.checked_sub(1) {
-            if let Some(s) = self.get_square(n, coord.1) {
-                if state == s.clone() {
-                    count += 1
-                }
-            }
-        }
-        if let Some(s) = self.get_square(coord.0 + 1, coord.1) {
-            if state == s.clone() {
-                count += 1
-            }
-        }
-        let mut x = 0;
-        let mut n = 2;
-        if coord.0 != 0 {
-            x = coord.0 - 1;
-            n = 3;
-        }
-        let top_y =  coord.1.checked_sub(1);
-        for i in 0..n {
-            if let Some(y) = top_y {
-                if let Some(s) = self.get_square(x + i, y) {
-                    if state == s.clone() {
-                        count += 1
-                    }
-                }
-            }
-            if let Some(s) = self.get_square(x + i, coord.1 + 1) {
-                if state == s.clone() {
-                    count += 1
-                }
-            }
-        }
-        count as usize
-    }
-
-    pub fn check_n_of_available_axis(&self, index: usize, state: SquareState) -> usize {
-        let coord = self.get_index_coord(index);
-        let mut axis = 0;
-         if self.check_x(coord.0, coord.1, state, false, true) >= self.seq_to_win {
-             axis += 1
-         }
-        if self.check_y(coord.0, coord.1, state, false, true) >= self.seq_to_win {
-            axis += 1
-        }
-        if self.check_left_diag(coord.0, coord.1, state, false, true) >= self.seq_to_win {
-            axis += 1
-        }
-        if self.check_right_diag(coord.0, coord.1, state, false, true) >= self.seq_to_win {
-            axis += 1
-        }
-        axis
-    }
-
-    pub fn check_blocked_op_spaces(&self, index: usize, op_placed_square: SquareState) -> [usize; 4] {
-        let mut count: [usize; 4] = [0,0,0,0];
-        let coord = self.get_index_coord(index);
-
-        count[0] = self.check_x(coord.0, coord.1, op_placed_square, false, false) - 1;
-        count[1] = self.check_y(coord.0, coord.1, op_placed_square, false, false) - 1;
-        count[2] = self.check_left_diag(coord.0, coord.1, op_placed_square, false, false) - 1;
-        count[3] = self.check_right_diag(coord.0, coord.1, op_placed_square, false, false) - 1;
-
-        count
-    }
-
-    fn check_y(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // |
+    fn all_lines_checker(&self, x: usize, y: usize, state: &SquareState, stop_counting: bool, check_x_axis: bool, check_y_axis: bool, inverted: bool) -> (usize, usize) {
         let mut available_spaces_count = 1;
         let mut seq_count = 1;
-        let mut dist = 1;
-        let mut y_check = y.checked_sub(1); // starts looking above, checked sub is to avoid going below 0
-        while dist < self.seq_to_win && y_check.is_some() {
-            let square_state = self.get_square(x, y_check.unwrap()).unwrap().clone();
-            if square_state == state {
-                seq_count += 1;
-            }else if stop_counting || square_state != SquareState::None {
-                break
+        let mut dist;
+        let loop_condition: Box<dyn Fn(i32, (&mut usize, &mut usize)) -> bool> = if check_x_axis == check_y_axis {
+            Box::new(|dist, (check_x, check_y)| {
+                let (offset_x, offset_y) = if inverted { (dist, -dist) } else { (dist, dist) };
+                let result = x as i32 + offset_x >= 0 && y as i32 + offset_y >= 0 && dist < self.seq_to_win as i32;
+                if result {
+                    *check_y = (y as i32 + offset_y) as usize;
+                    *check_x = (x as i32 + offset_x) as usize;
+                }
+                result
+            })
+        } else {
+            Box::new(|dist, (check_x, check_y)| {
+                let (value, to_check) = if check_x_axis {
+                    (x, check_x)
+                } else {
+                    (y, check_y)
+                };
+                let result = value as i32 + dist >= 0 && dist < self.seq_to_win as i32;
+                if result {
+                    *to_check = (value as i32 + dist) as usize;
+                }
+                result
+            })
+        };
+        for i in [1, -1].iter().copied() {
+            dist = i;
+            let mut checking_x = x;
+            let mut checking_y = y;
+            while loop_condition(dist, (&mut checking_x, &mut checking_y)) {
+                let square_state = self.get_square(checking_x, checking_y);
+                if let Some(n) = square_state {
+                    if n == state {
+                        seq_count += 1;
+                    }else if stop_counting || n != &SquareState::None {
+                        break
+                    }
+                }else {
+                    break
+                }
+                dist += i;
+                available_spaces_count += 1;
             }
-            dist += 1;
-            available_spaces_count += 1;
-            y_check = y_check.unwrap().checked_sub(1);
         }
-        let mut y_check = y + 1; // then looks below
-        dist = 1;
-        while dist < self.seq_to_win && y_check < self.x_size {
-            let square_state = self.get_square(x, y_check).unwrap().clone();
-            if square_state == state {
-                seq_count += 1;
-            }else if stop_counting || square_state != SquareState::None {
-                break
-            }
-            dist += 1;
-            available_spaces_count += 1;
-            y_check += 1;
-        }
+        (seq_count, available_spaces_count)
+    }
+
+    fn check_for_victory(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool, x_axis: bool, y_axis: bool, inverted: bool) -> usize { // |
+        let result = self.all_lines_checker(x, y, &state, stop_counting, x_axis, y_axis, inverted);
         return if return_available_spaces {
-               available_spaces_count
-        }else if available_spaces_count >= self.seq_to_win {
-            seq_count
+            result.1
+        }else if result.0 >= self.seq_to_win {
+            result.0
         }else {
             1
         }
     }
 
     fn check_x(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // -
-        let mut available_spaces_count = 1;
-        let mut seq_count = 1;
-        let mut x_check = x.checked_sub(1);
-        let mut dist = 1;
-        while dist < self.seq_to_win && x_check.is_some() {
-            let square_state = self.get_square(x_check.unwrap(), y).unwrap().clone();
-            if square_state == state {
-                seq_count += 1;
-            }else if stop_counting || square_state != SquareState::None { break }
-            available_spaces_count += 1;
-            dist += 1;
-            x_check = x_check.unwrap().checked_sub(1);
-        }
-        let mut x_check = x + 1; // then looks to the right
-        dist = 1;
-        while dist < self.seq_to_win && x_check < self.x_size {
-            let square_state = self.get_square(x_check, y).unwrap().clone();
-            if  square_state == state {
-                seq_count += 1;
-            }else if stop_counting || square_state != SquareState::None {
-                break
-            }
-            available_spaces_count += 1;
-            dist += 1;
-            x_check += 1;
-        }
-        return if return_available_spaces {
-            available_spaces_count
-        }else if available_spaces_count >= self.seq_to_win {
-            seq_count
-        }else {
-            1
-        }
+        return self.check_for_victory(x, y, state, stop_counting, return_available_spaces, true, false, false)
     }
-
+    fn check_y(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // |
+        return self.check_for_victory(x, y, state, stop_counting, return_available_spaces, false, true, false)
+    }
     fn check_left_diag(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // \
-        let mut available_spaces_count = 1;
-        let mut seq_count = 1;
-        let mut x_check = x.checked_sub(1);
-        let mut y_check = y.checked_sub(1);
-        let mut dist = 1;
-        while dist < self.seq_to_win && x_check.is_some() && y_check.is_some() {
-            let square_state = self.get_square(x_check.unwrap(), y_check.unwrap()).unwrap().clone();
-            if square_state == state {
-                seq_count += 1;
-            }else if stop_counting || square_state != SquareState::None {
-                break
-            }
-            available_spaces_count += 1;
-            x_check = x_check.unwrap().checked_sub(1);
-            y_check = y_check.unwrap().checked_sub(1);
-            dist += 1
-        }
-        let mut x_check = x + 1;
-        let mut y_check = y + 1;
-        dist = 1;
-        while dist < self.seq_to_win && x_check < self.x_size && y_check < self.y_size {
-            let square_state = self.get_square(x_check, y_check).unwrap().clone();
-            if square_state == state {
-                seq_count += 1;
-            }else if stop_counting || square_state != SquareState::None {
-                break
-            }
-            available_spaces_count += 1;
-            x_check += 1;
-            y_check += 1;
-            dist += 1
-        }
-        return if return_available_spaces {
-            available_spaces_count
-        }else if available_spaces_count >= self.seq_to_win {
-            seq_count
-        }else {
-            1
-        }
+        return self.check_for_victory(x, y, state, stop_counting, return_available_spaces, true, true, false)
     }
     fn check_right_diag(&self, x: usize, y: usize, state: SquareState, stop_counting: bool, return_available_spaces: bool) -> usize { // /
-        let mut available_spaces_count = 1;
-        let mut seq_count = 1;
-        let mut x_check = x.checked_sub(1);
-        let mut y_check = y + 1;
-        let mut dist = 1;
-        while dist < self.seq_to_win && x_check.is_some() && y_check < self.y_size {
-            let square_state = self.get_square(x_check.unwrap(), y_check).unwrap().clone();
-            if square_state == state {
-                seq_count += 1;
-            }else if stop_counting || square_state != SquareState::None {
-                break
-            }
-            available_spaces_count += 1;
-            x_check = x_check.unwrap().checked_sub(1);
-            y_check += 1;
-            dist += 1
-        }
-        let mut x_check = x + 1;
-        let mut y_check = y.checked_sub(1);
-        dist = 1;
-        while dist < self.seq_to_win && x_check < self.x_size && y_check.is_some() {
-            let square_state = self.get_square(x_check, y_check.unwrap()).unwrap().clone();
-            if square_state == state {
-                seq_count += 1;
-            }else if stop_counting || square_state != SquareState::None {
-                break
-            }
-            available_spaces_count += 1;
-            x_check += 1;
-            y_check = y_check.unwrap().checked_sub(1);
-            dist += 1
-        }
-        return if return_available_spaces {
-            available_spaces_count
-        }else if available_spaces_count >= self.seq_to_win {
-            seq_count
-        }else {
-            1
-        }
+        return self.check_for_victory(x, y, state, stop_counting, return_available_spaces, true, true, true)
     }
 
     pub fn check_draw(&self) -> bool {
