@@ -154,7 +154,7 @@ impl SpecialBoardChecks for TicTacToe {
                     highest = count[i]
                 }
             }
-            return highest as i32;
+            highest as i32
         }else {
             ((self.check_x(coord.0, coord.1, state, false, false) +
                 self.check_y(coord.0, coord.1, state, false, false) +
@@ -349,7 +349,7 @@ impl TicTacToe {
         let result = self.all_lines_checker(x, y, &state, stop_counting, x_axis, y_axis, inverted);
         return if return_available_spaces {
             result.1
-        }else if result.0 >= self.seq_to_win {
+        }else if !stop_counting || result.0 >= self.seq_to_win {
             result.0
         }else {
             1

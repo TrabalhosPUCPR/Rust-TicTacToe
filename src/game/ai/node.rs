@@ -26,15 +26,6 @@ impl<T> Node<T> where T: Clone + PartialEq {
             heuristic: Default::default(),
         }
     }
-    pub fn get_children_sorted(&self, max: bool) -> Vec<Node<T>> {
-        let mut children = self.children.clone();
-        if !max {
-            children.sort_unstable_by(|a, b| { a.partial_cmp(b).unwrap() });
-        }else {
-            children.sort_unstable_by(|a, b| { b.partial_cmp(a).unwrap() });
-        }
-        children
-    }
 }
 
 impl<T> PartialOrd for Node<T> where T: PartialEq {

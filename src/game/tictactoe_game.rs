@@ -179,7 +179,7 @@ impl TicTacToeGame {
                 max_layers = 2;
             }
             AiDifficulties::Hard => {
-                max_childs = 8;
+                max_childs = 10;
                 max_layers = 6;
             }
         }
