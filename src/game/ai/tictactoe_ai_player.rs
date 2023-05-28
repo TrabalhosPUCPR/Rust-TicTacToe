@@ -27,7 +27,7 @@ impl Ai {
     }
     fn compute_next_move(&self, current_node: &Node<(TicTacToe, usize, TurnState)>, mut parent_alpha: f32, mut parent_beta: f32, layer: usize, maximizing: bool) -> (f32, usize) {
         if layer == 0 || current_node.data.2 != TurnState::Continue {
-            return (current_node.get_true_utility(), current_node.data.1);
+            return (current_node.data_score, current_node.data.1);
         }
         let possible_moves = self.get_possible_moves(&current_node.data.0, maximizing);
         return if maximizing {
@@ -83,17 +83,17 @@ impl Ai {
                 let mut possible_move_node = Node::new((board_binding, square.0, move_state.clone()));
                 match move_state {
                     TurnState::Draw => {
-                        possible_move_node.utility = 0;
+                        possible_move_node.data_score = 0.0;
                     }
                     TurnState::Victory => {
                         if own_turn {
-                            possible_move_node.utility = 1;
+                            possible_move_node.data_score = 1.0;
                         }else {
-                            possible_move_node.utility = -1;
+                            possible_move_node.data_score = -1.0;
                         }
                     }
                     TurnState::Continue => {
-                        possible_move_node.heuristic = self.get_move_heuristic(&possible_move_node.data.0, square_state, square.0, own_turn)
+                        possible_move_node.data_score = self.get_move_heuristic(&possible_move_node.data.0, square_state, square.0, own_turn)
                     }
                     _ => {
                         panic!("Unexpected Ai Error")
@@ -141,7 +141,7 @@ impl Ai {
             empty_space_around_score = 0;
         }
         defense_score /= 10.0;
-        let heuristic = (attack_score + defense_score + (available_axis) / 10.0) + (empty_space_around_score as f32 / 100.0);
+        let heuristic = ((attack_score + defense_score + (available_axis) / 10.0) + (empty_space_around_score as f32 / 100.0)) / 100.0;
         return if own_turn {
             heuristic
         }else {
