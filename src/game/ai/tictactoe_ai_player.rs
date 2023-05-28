@@ -87,9 +87,9 @@ impl Ai {
                     }
                     TurnState::Victory => {
                         if own_turn {
-                            possible_move_node.utility = 10;
+                            possible_move_node.utility = 1;
                         }else {
-                            possible_move_node.utility = -10;
+                            possible_move_node.utility = -1;
                         }
                     }
                     TurnState::Continue => {
@@ -124,15 +124,15 @@ impl Ai {
         let op_square = if own_turn { SquareState::Filled(self.op_symbol) } else { SquareState::Filled(self.symbol) };
         let mut defense_score = board.sum_squares_in_winnable_distance(index, op_square, false) as f32;
         let mut empty_space_around_score = board.spaces_of_around(index, SquareState::None) as i32;
+        let x_size = board.x_size;
+        let y_size = board.y_size;
+        let coord = board.get_index_coord(index);
         if board.seq_to_win.pow(2) < board.size() {
             if (board.seq_to_win % 2 != 0 && defense_score >= (board.seq_to_win as f32 / 2.0).ceil()) ||
                 (board.seq_to_win % 2 == 0 && defense_score >= (board.seq_to_win as f32 - 2.0)) {
                 defense_score *= 100.0;
             }
         }
-        let x_size = board.x_size;
-        let y_size = board.y_size;
-        let coord = board.get_index_coord(index);
         if coord.1 == 0 || coord.1 == y_size - 1 {
             if coord.0 > 0 && coord.0 < x_size - 1 {
                 empty_space_around_score = 0;
@@ -141,7 +141,7 @@ impl Ai {
             empty_space_around_score = 0;
         }
         defense_score /= 10.0;
-        let heuristic = (attack_score + defense_score + (available_axis) / 100.0) + (empty_space_around_score as f32 / 100.0);
+        let heuristic = (attack_score + defense_score + (available_axis) / 10.0) + (empty_space_around_score as f32 / 100.0);
         return if own_turn {
             heuristic
         }else {
