@@ -122,15 +122,16 @@ impl Ai {
         let attack_score = board.sum_squares_in_winnable_distance(index, square_state, false) as f32;
         let available_axis = board.check_n_of_available_axis(index, square_state) as f32;
         let op_square = if own_turn { SquareState::Filled(self.op_symbol) } else { SquareState::Filled(self.symbol) };
-        let mut defense_score = board.sum_squares_in_winnable_distance(index, op_square, false) as f32;
+        let mut total_defense_score = board.sum_squares_in_winnable_distance(index, op_square, false) as f32;
         let mut empty_space_around_score = board.spaces_of_around(index, SquareState::None) as i32;
         let x_size = board.x_size;
         let y_size = board.y_size;
         let coord = board.get_index_coord(index);
         if board.seq_to_win.pow(2) < board.size() {
-            if (board.seq_to_win % 2 != 0 && defense_score >= (board.seq_to_win as f32 / 2.0).ceil()) ||
-                (board.seq_to_win % 2 == 0 && defense_score >= (board.seq_to_win as f32 - 2.0)) {
-                defense_score *= 100.0;
+            let highest_amount_of_blocked_spaces = board.sum_squares_in_winnable_distance(index, op_square, true) as f32;
+            if (board.seq_to_win % 2 != 0 && highest_amount_of_blocked_spaces >= (board.seq_to_win as f32 / 2.0).ceil()) ||
+                (board.seq_to_win % 2 == 0 && highest_amount_of_blocked_spaces >= (board.seq_to_win as f32 - 2.0)) {
+                total_defense_score *= 100.0;
             }
         }
         if coord.1 == 0 || coord.1 == y_size - 1 {
@@ -140,8 +141,8 @@ impl Ai {
         } else if coord.0 == 0 || coord.0 == x_size - 1 {
             empty_space_around_score = 0;
         }
-        defense_score /= 10.0;
-        let heuristic = ((attack_score + defense_score + (available_axis) / 10.0) + (empty_space_around_score as f32 / 100.0)) / 100.0;
+        total_defense_score /= 10.0;
+        let heuristic = ((attack_score + total_defense_score + (available_axis / 10.0)) + (empty_space_around_score as f32 / 100.0)) / 100.0;
         return if own_turn {
             heuristic
         }else {
