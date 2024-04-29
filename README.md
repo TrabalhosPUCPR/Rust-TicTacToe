@@ -1,2 +1,2 @@
 # Rust-TicTacToe
-Terminal TicTacToe made in Rust
+Terminal TicTacToe made in Rust with AI
